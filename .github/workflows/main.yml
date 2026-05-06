@@ -56,7 +56,16 @@ jobs:
         run: |
           cd sdk
           make defconfig
-
+          
+      - name: Build node first
+        run: |
+          cd sdk
+          make package/node/compile -j$(nproc)
+          
+      - name: check    
+        run: |
+          ls sdk/package/feeds/node
+          
       - name: Build package
         run: |
           cd sdk

@@ -38,6 +38,7 @@ jobs:
           tar --zstd -xf openwrt-sdk-*.tar.zst
           mkdir -p sdk
           mv openwrt-sdk-*/* sdk/
+          rm openwrt-sdk-*.tar.zst
           rmdir openwrt-sdk-*
 
       - name: Add custom feed

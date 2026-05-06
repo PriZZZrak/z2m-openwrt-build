@@ -36,7 +36,9 @@ jobs:
         run: |
           wget https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${TARGET}/${SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${TARGET}-${SUBTARGET}_gcc-13.3.0_musl.Linux-x86_64.tar.zst
           tar --zstd -xf openwrt-sdk-*.tar.zst
-          mv openwrt-sdk-* sdk
+          mkdir -p sdk
+          mv openwrt-sdk-*/* sdk/
+          rmdir openwrt-sdk-*
 
       - name: Add custom feed
         run: |

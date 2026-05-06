@@ -21,6 +21,15 @@ jobs:
           gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
           python3-distutils rsync unzip zlib1g-dev file wget curl
 
+      - name: Download OpenWrt SDK
+        run: |
+          wget https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${TARGET}/${SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${TARGET}-${SUBTARGET}_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+          tar --zstd -xf openwrt-sdk-*.tar.zst
+          mkdir -p sdk
+          mv openwrt-sdk-*/* sdk/
+          rm openwrt-sdk-*.tar.zst
+          rmdir openwrt-sdk-*
+
       - name: Restore cache (dl + toolchain)
         uses: actions/cache@v4
         with:
@@ -31,20 +40,11 @@ jobs:
           key: openwrt-${{ env.OPENWRT_VERSION }}-${{ env.TARGET }}-${{ env.SUBTARGET }}-${{ hashFiles('**/Makefile') }}
           restore-keys: |
             openwrt-${{ env.OPENWRT_VERSION }}-${{ env.TARGET }}-${{ env.SUBTARGET }}-
-
-      - name: Download OpenWrt SDK
-        run: |
-          wget https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${TARGET}/${SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${TARGET}-${SUBTARGET}_gcc-13.3.0_musl.Linux-x86_64.tar.zst
-          tar --zstd -xf openwrt-sdk-*.tar.zst
-          mkdir -p sdk
-          mv openwrt-sdk-*/* sdk/
-          rm openwrt-sdk-*.tar.zst
-          rmdir openwrt-sdk-*
-
+        
       - name: Add custom feed
         run: |
           cd sdk
-          echo "src-git custom https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf.default
+          echo "src-git node https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf.default
 
       - name: Update & install feeds
         run: |
@@ -60,10 +60,27 @@ jobs:
       - name: Build package
         run: |
           cd sdk
-          make package/node-zigbee2mqtt/compile V=s -j$(nproc)
+          make package/feeds/node/compile V=s -j$(nproc)
 
       - name: Upload IPK
         uses: actions/upload-artifact@v4
         with:
-          name: zigbee2mqtt-ipk
-          path: sdk/bin/packages/**/node-zigbee2mqtt*.ipk
+          name: node-ipk
+          path: sdk/bin/packages/**/node*.ipk
+
+       - name: Prepare repo
+        run: |
+          mkdir -p repo
+          find sdk/bin/packages -name "*.ipk" -exec cp {} repo/ \;
+
+      - name: Generate Packages index
+        run: |
+          cd sdk
+          ./staging_dir/host/bin/opkg-make-index ../repo > ../repo/Packages
+          gzip -k -f ../repo/Packages
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./repo

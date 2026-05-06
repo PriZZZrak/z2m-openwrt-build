@@ -1,0 +1,66 @@
+name: Build Zigbee2MQTT (OpenWrt)
+
+on:
+  workflow_dispatch:
+  push:
+
+env:
+  OPENWRT_VERSION: "24.10.5"
+  TARGET: "mediatek"
+  SUBTARGET: "filogic"
+  
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential clang flex bison g++ gawk \
+          gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
+          python3-distutils rsync unzip zlib1g-dev file wget curl
+
+      - name: Restore cache (dl + toolchain)
+        uses: actions/cache@v4
+        with:
+          path: |
+            sdk/dl
+            sdk/staging_dir
+            sdk/build_dir
+          key: openwrt-${{ env.OPENWRT_VERSION }}-${{ env.TARGET }}-${{ env.SUBTARGET }}-${{ hashFiles('**/Makefile') }}
+          restore-keys: |
+            openwrt-${{ env.OPENWRT_VERSION }}-${{ env.TARGET }}-${{ env.SUBTARGET }}-
+
+      - name: Download OpenWrt SDK
+        run: |
+          wget https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${TARGET}/${SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${TARGET}-${SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          tar -xf openwrt-sdk-*.tar.xz
+          mv openwrt-sdk-* sdk
+
+      - name: Add custom feed
+        run: |
+          cd sdk
+          echo "src-git custom https://github.com/nxhack/openwrt-node-packages.git" >> feeds.conf.default
+
+      - name: Update & install feeds
+        run: |
+          cd sdk
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Configure
+        run: |
+          cd sdk
+          make defconfig
+
+      - name: Build package
+        run: |
+          cd sdk
+          make package/node-zigbee2mqtt/compile V=s -j$(nproc)
+
+      - name: Upload IPK
+        uses: actions/upload-artifact@v4
+        with:
+          name: zigbee2mqtt-ipk
+          path: sdk/bin/packages/**/node-zigbee2mqtt*.ipk

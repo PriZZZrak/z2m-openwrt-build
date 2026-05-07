@@ -37,6 +37,7 @@ jobs:
             sdk/dl
             sdk/staging_dir
             sdk/build_dir
+            ~/.npm
           key: openwrt-${{ env.OPENWRT_VERSION }}-${{ env.TARGET }}-${{ env.SUBTARGET }}-${{ hashFiles('**/Makefile') }}
           restore-keys: |
             openwrt-${{ env.OPENWRT_VERSION }}-${{ env.TARGET }}-${{ env.SUBTARGET }}-
@@ -66,10 +67,10 @@ jobs:
         run: |
           ls sdk/package/feeds/node
           
-      - name: Build package
-        run: |
-          cd sdk
-          make package/feeds/node/compile V=s -j$(nproc)
+      #- name: Build package
+        #run: |
+          #cd sdk
+          #make package/feeds/node/compile V=s -j$(nproc)
 
       - name: Upload IPK
         uses: actions/upload-artifact@v4

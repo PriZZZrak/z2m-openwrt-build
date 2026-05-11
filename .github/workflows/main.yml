@@ -63,34 +63,9 @@ jobs:
           cd sdk
           make package/node/compile -j$(nproc)
           
-      - name: check    
-        run: |
-          ls sdk/package/feeds/node
-          
-      #- name: Build package
-        #run: |
-          #cd sdk
-          #make package/feeds/node/compile V=s -j$(nproc)
-
       - name: Upload IPK
         uses: actions/upload-artifact@v4
         with:
           name: node-ipk
           path: sdk/bin/packages/**/node*.ipk
 
-      - name: Prepare repo
-        run: |
-          mkdir -p repo
-          find sdk/bin/packages -name "*.ipk" -exec cp {} repo/ \;
-
-      - name: Generate Packages index
-        run: |
-          cd sdk
-          ./staging_dir/host/bin/opkg-make-index ../repo > ../repo/Packages
-          gzip -k -f ../repo/Packages
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./repo

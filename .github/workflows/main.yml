@@ -69,3 +69,9 @@ jobs:
           name: node-ipk
           path: sdk/bin/packages/**/node*.ipk
 
+      - name: List folder
+        run: |
+          cd sdk/bin/packages/aarch64_cortex-a53/node/
+          ls
+        
+

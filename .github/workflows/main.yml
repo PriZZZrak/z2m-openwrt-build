@@ -12,8 +12,11 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    
     steps:
+      - uses: actions/checkout@v4
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        
       - name: Install dependencies
         run: |
           sudo apt update
@@ -52,9 +55,6 @@ jobs:
           cd sdk
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-      
-      - name: Debug shell
-        uses: mxschmit/action-tmate@v3
         
       - name: Configure
         run: |

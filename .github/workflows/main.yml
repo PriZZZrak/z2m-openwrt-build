@@ -52,7 +52,10 @@ jobs:
           cd sdk
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-
+      
+      - name: Debug shell
+        uses: mxschmit/action-tmate@v3
+        
       - name: Configure
         run: |
           cd sdk
